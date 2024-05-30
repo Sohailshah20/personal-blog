@@ -1,0 +1,42 @@
+---
+title: Getting Started With Hibernate And JPA
+description: In this blog we will discuss about the how to get started with hibernate and jpa(jakarta persistence api)
+published: 28 05 2023 2 PM
+slug: getting-started-with-hibernate-and-jpa
+---
+
+# Why learn JPA?
+If you are developing Java applications that connect a database( which they usually do), to create a connection between the database and the application we use JPA. JPA is used only with relation databases not with non-relational databases. We can connect to a database using JDBC which a similar to JPA but it's a low-level primitive.
+
+The most popular technologies using JPA are
+
+1. Spring Boot applications
+3. Java EE/ Jakarta EE applications
+
+At the heart of JPA lies Object Relational Mapping. For example in Java to represent a customer we use a class with different fields. In the database, the customer details are saved in a row with columns with field names. For accessing a customer details or list of customer details from the database we use queries but the customer data we get from the database is not a customer object. That is where the JPA comes in. It maps the column field names to the filed names in the class to create a customer object.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/lk2311zuuyj32rss9i37.png)
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rqyyc79qzuwidd3v71w5.png)
+Well, Mapping one class field names to a row in a database is simple and we can use JDBC to achieve this. In the real-world scenario, there are usually lots of tables referencing each other for data. For customers, there can be an Orders table and a Java class representing the Order object.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/goyb18usag6c4k6p4b0s.png)
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/4r2chbnb658rzevvaw1d.png)
+Java classes can have field types that are other classes instead of primitive types. Then mapping data from multiple tables to a single class becomes tricky. That’s why JPA was developed to solve these kinds of problems. JPA allows the use do this kind of complex mapping operations using various APIs.
+
+# Difference between JPA and Hibernate
+JPA is the interface or specification provided by Java EE. The JPA interface lists all the APIs you need to work with relational databases.
+
+Hibernate is the implementation of the interface. Hibernate provides the working of the JPA.
+
+We can work with hibernate directly without needing the JPA. But we need to remember that hibernate is an open-source ORM framework. For some reason, if hibernate goes away, we’ll have to re-write our entire code with a different ORM framework. That is exactly what JPA solves. Instead of working directly with any ORM framework like hibernate, we work with APIs provided by the JPA specification. Then in case the ORM framework you are working with disappears or doesn’t solve your problems, we can just switch it to another ORM framework without the need to re-writing or change any of our code.
+
+Hibernate has set the standard for API implementation for JPA. If you are working with Java applications the default implementation is JPA used is Hibernate. There are various other implementations of JPA available but you have to go out of your way to use them instead of hibernate.
+# Steps to work with hibernate
+
+1. Add hibernate to your project classpath as a maven dependency or just add jar
+2. Mapping classes to database tables. Example: Mapping Student class to Student table
+3. Mapping can be done using XML config file or Java annotations
+4. Mapping class member variables to columns
+5. Use APIs to perform database operations like save/update/ retrieve

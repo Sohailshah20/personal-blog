@@ -1,0 +1,114 @@
+---
+title: Dive into the Spring Security Architecture
+description: In this post, we'll be looking at the components that form spring security and understand how the spring security architecture works.
+published: 02 07 2023 2 PM
+slug: dive-into-spring-security-architecture
+---
+
+In this post, we'll be looking at the components that form spring security and understand how the spring security architecture works. By getting to know the components of spring security and their working, it becomes easy to configure and implement our own security mechanisms.
+
+## Components of Spring Security
+
+The following are the basic components that form the spring security architecture. 
+
+* Filters
+2. Authentication Manager
+3. Authentication Provider
+4. User Details Service
+5. Password Encoder
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/k5c6isf4ci6ippivd60v.png)
+Let's talk about each one of them in detail
+
+### Filters
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/9vnsy8ttlbz6gybyau57.png)
+
+In spring applications, every request needs to pass through a chain of filters before the request ends up in the controller class. These filters are responsible for the authentication and authorization of users and their requests to access resources.
+The filters check the validity of each request based on internal rules defined. You can create your custom filters with your own rules.
+
+Let's say the request is in the authentication filter. The authentication filter is responsible for extracting user authentication details and tokens. These user details are packaged as authentication objects and passed to **Authentication Manager**.
+The auth object is created using an implementation **Authentication** interface such as UsernamePasswordAuthenticationToken.
+
+### Authentication Manager
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1tmhrko5wjoy9h3pb65y.png)
+
+``` Java
+public interface AuthenticationManager {
+    Authentication authenticate(Authentication authentication) throws AuthenticationException;
+}
+```
+The **Authentication Manager** receives an authentication object from the authentication filter. **Authentication Manager** is an object whose responsibility is to find a way to authenticate users. That is achieved by using **Authentication Provider**.
+
+In a typical spring security configuration, there is only one **Authentication Manager** which delegates the authentication request to the correct **Authentication Provider**.
+
+The **Authentication Manager** interface has only one method called authenticate that takes in an authentication object passed down from the authentication filter. Upon successful authentication of the user, the **Authentication Manager** returns an authenticated **Authentication** object.
+
+### Authentication Provider
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/h1utb3ysq2x5tapjedat.png)
+
+``` Java
+public interface AuthenticationProvider {
+    Authentication authenticate(Authentication authentication) throws AuthenticationException;
+
+    boolean supports(Class<?> authentication);
+}
+```
+There can be multiple Authentication Providers in a spring security context. Every **Authentication Provider** is responsible for handling different authentication mechanisms. For example, a spring application can have both username and password authentication as well as HttpBasic authentication. For both of these authentication mechanisms, there will be an **Authentication Provider** implementation.
+
+The **Authentication Provider** interface has a authenticate method like the **Authentication Manager** and a supports method.
+The supports method checks if the current provider supports the authentication for the given type of credentials, if not the credentials are passed to the next provider/filter.
+
+The authenticate method actually validates the credentials or tokens of the user. This method gets the user details using the UserDetailsService interface which is responsible for retrieving user details from a user store-like database. Upon successful authentication, the method returns an authenticated **Authentication** object back to the **Authentication Manager**. At last, this authenticated object is stored by the Authentication Manager in the spring security context, which holds the users' authentication information. This information can be accessed throughout the application.
+
+### UserDetailsService
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/x21ghwtgzk9c3v66uziq.png)
+
+The **UserDetailsService** interface has only one method **loadUserByUsername** which takes the username from the authentication object passed down from the filter.
+
+The loadUserByUsername method returns a **UserDetials** object which contains user details like username, password, authorities and, other details.
+
+``` Java
+public interface UserDetailsService {
+    UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+}
+```
+
+``` Java
+public interface UserDetails extends Serializable {
+    Collection<? extends GrantedAuthority> getAuthorities();
+
+    String getPassword();
+
+    String getUsername();
+
+    boolean isAccountNonExpired();
+
+    boolean isAccountNonLocked();
+
+    boolean isCredentialsNonExpired();
+
+    boolean isEnabled();
+}
+```
+
+### Password Encoder
+
+Since we are talking about security, it is very important that the users' passwords are secured for the entirety of the authentication process. Spring Security comes with some de facto password encoders out of the box. This makes it easier for us developers to manage users while authenticating and storing them in the database.
+
+Some popular implementations of the PasswordEncoder interface are BCryptPasswordEncoder, SCryptPasswordEncoder, and AbstractPasswordEncoder.
+
+To work with the password encoder, define a bean that returns a type PasswordEncoder
+
+``` Java
+@Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+```
+Now you can inject this bean in the user service to encode the password before storing it in the database and in the authentication provider to decrypt the password for validation.
+
+Knowing and understanding these components of spring security helps to implement security better for our applications.

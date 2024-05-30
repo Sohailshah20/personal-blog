@@ -1,0 +1,253 @@
+---
+title: One-To-One Relationship, Fetch type, Relationship Direction, And Query Optimization
+description: Persisting non primitive types with JPA
+published: 11 07 2023 2 PM
+slug: jpa-one-to-one-relationship
+---
+
+
+In the previous posts, we had only a single entity called the student. Let's create another entity named the library card. The library card entity will have its own table in the database with its own primary id column.
+
+``` Java
+@Entity
+@Table(name = "library_card")
+public class LibraryCard {
+    @Id
+    @GeneratedValue
+    private int id;
+    @Temporal(TemporalType.DATE)
+    private Date issuedDate;
+    private boolean isActive;
+}
+```
+Just like the student entity we have annotated the library card with **@Entity** annotation and its member variables with proper annotations.
+
+We can create and persist library card entities in the database just like we persisted the student entities. What we want to do here is for each student to have exactly one library card.
+
+To do it a simple way we might add a library card member variable in the student entity and store the primary key values of the corresponding library card in It. Using these primary key values of library cards we can reference the library cards table itself.
+
+``` Java
+@Entity
+@Table(name = "student_table")
+public class Student{
+    .
+    .
+    private int library_card;
+    .
+    .
+}
+```
+
+That might look simple and easy, but doing things that way will only create tons of problems in the future causing database inconsistencies.
+
+Apart from that, we really didn't create any relationship between the two tables in the database or in the Java side of things. The library card column in the student table only contains a value that is supposed to be a primary key for the library card table but doesn't guarantee it.
+
+The solution for this problem is relationships provided by JPA. The different relationships we can define are one-to-one, one-to-many, many-to-one and many-to-many.
+
+Using a proper relationship for tables requires us to understand our data itself. In our example, each student can have only one library card. So the proper relationship to use here is a one-to-one, relationship.
+
+## One to One relationship
+
+In a one-to-one relationship, one entity is associated with exactly one other entity. In terms of database tables, each record in a table is associated with exactly one record in another table. In our example, one student can have only one library card and vice versa.
+
+In our student entity, instead of a member variable library card which is of primitive type int let's replace it with a variable card of type LibraryCard which is a entity itself.
+
+``` Java
+@Entity
+@Table(name = "student_table")
+public class Student{
+    .
+    .
+    private LibraryCard card;
+    .
+    .
+}
+```
+
+If we run our application we’ll get an error, that’s because hibernate doesn’t know how to persist the non-primitive type card member.
+
+The annotation we are looking for is **@OneToOne**. By sticking this annotation on top of our card variable we telling JPA about the relationship we want to have between the library card entity and the the student entity.
+
+``` Java
+@OneToOne
+private LibraryCard card;
+```
+
+Now let's create a couple of library cards and persist them in the database just like we persisted student entities.
+
+``` Java
+public class Main {
+    public static void main(String[] args) {
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("myPersistenceUnit");
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+
+        Student student1 = new Student();
+        student1.setName("Sohail Shah");
+        student1.setAge(18);
+        student1.setAdmission_no("1234");
+        student1.setDob(new Date());
+        student1.setStudentType(StudentType.SCHOLARSHIP);
+
+        Student student2 = new Student();
+        student2.setName("Ali");
+        student2.setAge(20);
+        student2.setAdmission_no("1235");
+        student2.setDob(new Date());
+        student2.setStudentType(StudentType.NON_SCHOLARSHIP);
+
+        LibraryCard card1 = new LibraryCard();
+        card1.setActive(true);
+        card1.setIssuedDate(new Date());
+
+        LibraryCard card2 = new LibraryCard();
+        card2.setActive(false);
+        card2.setIssuedDate(new Date());
+
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        entityManager.persist(student1);
+        entityManager.persist(student2);
+        entityManager.persist(card1);
+        entityManager.persist(card2);
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+}
+```
+
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/gzmhlrrnz9j5l5og74w2.png)
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/g0sxsonphfmh4bvbgmdy.png)
+
+This is how the database currently looks. card_id column is set to null because we have set the relationship between the tables but haven't set the values for it. Let's do that now.
+
+Add these lines before persisting the entities.
+
+``` Java
+student1.setCard(card1);
+student2.setCard(card2);
+```
+
+If we look at our database now we can see that the primary keys of the library cards are present in the card id column of the student table
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ux1fjjudrub2rb12773d.png)
+
+This might look the same as we tried to do without the **@OneToOne** annotation just by simply storing the primary key. But here we have actually defined an actual relationship between the two tables.
+
+The card_id column contains the key called the foreign key. The Foreign key is important in databases because it helps create relationships between tables. This foreign key column contains the primary key of a different table. There are different types of keys available like the composite key, alternate key, super key, and several other keys. These keys are used for different purposes in a database.
+
+Now that we have a relationship between our entities, it becomes easier to work with them. This relationship brings referential integrity to our database. It ensures correct values are inserted and manages the data consistency for us.
+
+## Fetching
+
+Let's fetch a student from the database and see what it looks like now that it has a relationship with the library card table.
+
+``` Java
+EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("myPersistenceUnit");
+EntityManager entityManager = entityManagerFactory.createEntityManager();
+Student student1 = entityManager.find(Student.class, 1);
+System.out.println(student1)
+```
+> Add proper toString() method to entities for them to print correctly
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/jminso5njcwd0gem8xzi.png)
+
+This is the result of the fetch. Notice that we only fetched the student details but along with it it also fetched the library card details. Since the one-to-one relationship is defined between the two entities, fetching hibernate generates a join query also to fetch the library card details.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/2i6yast55kok8xa55ljp.png)
+
+This behaviour can be suitable in some situations and not in others. For example, let's say our student entity has multiple other relationships with different entities. So when we fetch student details, all the other entities which are in a relationship are also fetched. But we might not want the data of all entities in relationship with the student entity.
+
+JPA provides a way to change this behaviour of fetching. We can change this behaviour by configuring the one-to-one annotation. There are two fetch types. The Eager fetch and the lazy fetch. 
+
+### Eager Fetch
+
+By default, one-to-one annotation is set to eager fetch type. When the fetch type is set to eager the relationship data is fetched along with owner entity data, as we have seen above.
+
+``` Java
+@OneToOne(fetch = FetchType.EAGER)
+private LibraryCard card;
+```
+
+### Lazy Fetch
+
+``` Java
+@OneToOne(fetch = FetchType.LAZY)
+private LibraryCard card;
+```
+
+When the fetch type is set to lazy, the relationship data is not fetched instantaneously. It is only fetched when it is needed.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/03qtiz66mh856lhhl1ru.png)
+
+If we run the application with fetch type lazy, In the generated query you can see there is no join clause. The library card data is fetched as a separate query when required. 
+
+## Relationship Direction
+
+The direction of a relationship can be unidirectional or bidirectional.
+
+In a unidirectional relationship, one entity acts as the owner of another entity. In our case, logically speaking, a student must possess a library card and not the other way around. Therefore, the student entity owns the library card entity. The student entity can access the library card entity's data. However, the library card entity cannot access the student entity's data without explicitly writing queries for it.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8owjt5u1f1jd8cz0gg1k.png)
+
+In a bidirectional relationship, both entities have access to each other's data without writing queries explicitly.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fodfblxu5ofjrflvtv5h.png)
+
+To make a bidirectional relationship between student and library card entities, we have to add the Student as a member variable in the library card entity with one-to-one mapping.
+
+``` Java
+@Entity
+@Table(name = "library_card")
+public class LibraryCard {
+    @Id
+    @GeneratedValue
+    private int id;
+    @Temporal(TemporalType.DATE)
+    private Date issuedDate;
+    private boolean isActive;
+
+    @OneToOne
+    private Student owner;
+}
+```
+
+Before persisting the student and library card entities, add the following lines and run the application. Our database should look like this. Both the student table and card table store information about each other.
+
+``` Java
+card1.setOwner(student1);
+card2.setOwner(student2);
+```
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/tefvloglk1wnaj87p9m9.png)
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/7pe2cf9xboppcs4xj5cc.png)
+
+With this, we have access to student entity data with library card.
+
+``` Java
+LibraryCard libraryCard = entityManager.find(LibraryCard.class, 3);
+System.out.println(libraryCard.getOwner());
+```
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/2r0prgxt9n1letzsqshi.png)
+
+We are able to get the student details. But let's look at the generated query.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r1mifkerjh79enb33i8s.png)
+
+Library card details are being accessed multiple times as the library card is present in the student entity as well, even though we already have the card details. Hibernate doesn't recognize that the same library card is being queried again, even though they are in a bidirectional relationship. This is inefficient and can lead to issues.
+
+What we want is to inform Hibernate that the student entity is the primary entity and the library card entity is its mirror. So when we query for a student, we also want to retrieve the library card details. However, when we query the student details from the library card entity, which also contains the same library card, we don't want to perform an additional query. This can be achieved by using the **"mappedBy"** parameter in the OneToOne annotation.
+
+``` Java
+@OneToOne(mappedBy = "card")
+private Student owner;
+```
+
+Now when we run the application again, the library card is queried only once.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/kljafpgzhdea3ht7adgn.png)
+
+
+In this post, we have not only covered the one-to-one relationship, but also the fetch types that determine when to fetch data, the direction of relationships, and optimizing queries.

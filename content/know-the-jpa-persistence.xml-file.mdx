@@ -1,0 +1,120 @@
+---
+title: Know The JPA Persistence.xml File
+description: Lets get to know the contents of the persistence.xml file
+published: 21 06 2023 2 PM
+slug: know-the-jpa-persistence.xml-file
+---
+
+In the previous posts, we set up the Java project and connected it to a database with JPA, and hibernate. Let's look back on the persistence.xml file we created and understand it in more detail.
+
+> The location of this file is src -> META-INF -> persistence.xml
+
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <persistence-unit name="myPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <properties>
+            <!-- Database connection properties -->
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+
+            <!-- Hibernate properties -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+```
+
+The main node/ tag is the **\<persistence\>** & everything goes inside it.
+
+The next node is **\<persistence-unit\>.** We can create multiple persistence-unit nodes inside the persistence node. Each persistence-unit node has its name and transaction type. In our case the name is "myPersistenceUnit" and the transaction type is set to RESOURCE_LOCAL.
+
+There are typically three types of transactions
+
+1. JTA (Java Transaction API) - used in Java EE environments
+2. RESOURCE_LOCAL  - used in Java SE environments
+3. AUTO  - determines the environment automatically
+
+Next is defining the properties of our persistence unit. First, we have provided the database connection properties. Let's look at them individually.
+
+**url** - It is the database connection string
+
+```XML
+<property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+```
+
+**driver** - The database driver for the respective database used in the application
+
+```XML
+<property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+```
+
+**user** - username for the database connection
+
+```XML
+<property name="javax.persistence.jdbc.user" value="sa"/>
+```
+
+**password** - password for the database connection
+
+```XML
+<property name="javax.persistence.jdbc.password" value=""/>
+```
+
+All the properties come from the javax.persistence meaning these are JPA property names, not the hibernate properties.
+
+Next, we have defined the hibernate properties. These properties define the working behavior of the hibernate implementation. Let's look at them individually.
+
+**Dialect :**
+
+The dialect here means the SQL query grammar used by the JPA implementation uses when connecting to the database. Even though all the databases use SQL, there are some minor differences in the grammar. So we have to specify the dialect for the database we are using.
+
+For example, if we are using PostgreSQL we set the dialect like this
+
+```XML
+<property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+```
+
+For MySQL database
+
+```XML
+<property name="hibernate.dialect" value="org.hibernate.dialect.MYSQLDialect"/>
+```
+
+**show_sql :**
+
+If this property is set to true when we run our application and make database operations we can actually see the SQL queries written in the console. This is useful mainly for development purposes
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/51ta3myffy3l6m52zoye.png)
+
+**format-sql :**
+If this property is set to true, then it formats the SQL queries in the console. Again this can be useful for development purposes.
+
+```XML
+ <property name="hibernate.format_sql" value="true"/>
+```
+
+**hbm2ddl\*\***.\***\*auto :**
+
+This property defines the auto behaviour of the hibernate when converting JPA entities to ddl (data definition language). Here it is set to create-drop which sets the behaviour to drop the database schema and tables and create new schemas based on the JPA entities. It is typically used in development only as we don't want to drop our existing tables from the database.
+
+```XML
+<property name="hibernate.hbm2ddl.auto" value="create"/>
+```
+
+Some different behaviours we can set the auto to are:
+
+i. **validate** - Validates the schema against the mapping metadata  
+ii. **update** - Updates the schema based on the mapping metadata  
+iii. **create** - Creates a new schema from scratch based on the mapping metadata  
+iv. **none** - Disables automatic schema generation and update
+
+There are many other properties and tags present which can be used to define the behaviour of our persistence unit, but these are enough to get started with your application running.

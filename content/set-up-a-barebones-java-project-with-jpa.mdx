@@ -1,0 +1,83 @@
+---
+title: Set Up a Barebones Java project with JPA
+description: In this blog we will setup a barebones java project with jpa without any framework like sprnigboot
+published: 09 06 2023 2 PM
+slug: set-up-a-barebones-java-project-with-jpa
+---
+
+Typically JPA is integrated with Spring/Spring Boot and Java EE/Jakarta EE applications. Both these applications provide an abstraction over the JPA which hides a lot of stuff that we need to do manually in a barebones Java application. This abstraction over JPA works like magic. But here we are going to do the magic ourselves.
+
+## Setting up a database
+
+First, we need to set up a database for our application. For the sake of simplicity and development purposes, we are going to use the H2 database. H2 can be used as an in-memory database or serve mode. We’ll use server-side mode to simulate a real database.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/9g0r6ncze0l7p56y7lwn.png)
+
+We can switch the H2 database with any other relational database like MySQL, Postgres, or whatever else as long as it is relational.
+
+Download and install the H2 setup from the official site. Once installed, if you open the H2 console it opens up in the browser. You should see something like this.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/5xk56a3pw4csrkaef2zn.png)
+You set your username and password or can click the connect button it will run the H2 Database with default config.
+
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/tjb03wff7fervu2yo37k.png)
+
+You should see a page like this once you are connected. You can create tables and write SQL queries here.
+
+## Creating a Java Maven Project
+
+If you are using IntelliJ Idea, create a new Java maven project. Once the project build completes add the following dependency in the pom.xml file
+
+ 
+
+``` XML
+<dependency>
+  <groupId>org.hibernate</groupId>
+  <artifactId>hibernate-entitymanager</artifactId>
+  <version>5.6.15.Final</version>
+</dependency>`
+
+<dependency>
+  <groupId>com.h2database</groupId>
+  <artifactId>h2</artifactId>
+  <version>1.4.200</version>
+  <scope>complete</scope>
+</dependency>
+```
+
+
+The first dependency allows us to work with hibernate implementation which supports JPA and the second is for the database driver. In our case, it is an H2 database. If you are working with any other database, just switch the dependency with the respective database driver.
+
+## Persistence Context
+
+In the src → resources package create META-INF directory. In that directory create a **persistence.xml** file. This file is called the persistence context.
+
+``` XML
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <persistence-unit name="myPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <properties>
+            <!-- Database connection properties -->
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+
+            <!-- Hibernate properties -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+```
+
+
+It contains the configuration for our database. How to connect, where to connect, username, password, and other configurations. If you have experience with spring boot it is similar to the **application.properties** file.
+
+We’ll look in more detail at the persistence context file. For now, our bare-bones Java project with JPA is ready to run.

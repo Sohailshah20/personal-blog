@@ -1,0 +1,180 @@
+---
+title: Persisting non-primitive types in JPA
+description: Persisting non primitive types with JPA
+published: 25 06 2023 2 PM
+slug: persisting-non-primitive-types-jpa
+---
+
+In this post, we'll look at how we can persist non-primitive data types in JPA.
+
+The primitive data types like int, char, byte, String, boolean, or their respective wrapper classes are mapped automatically by default into the correct database types by implementing ORM frameworks like Hibernate or EclipseLink.
+The same is not true for non-primitive data types like Date and Enumeration.
+
+Let's see how possible solutions to persist them.
+
+## **Date**
+Let's consider an example where we have a Student entity class with a member variable dob(date of birth).
+
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+    private String admission_no;
+    @Column(name = "student_name")
+    private String name;
+    private int age;
+    private Date dob;
+}
+```
+The Date here is from the **java.util.Date** package not **java.sql.Date** which is a subclass of java.util.Date package. Even though the sql Date is the type that is persisted in the database in the end, util Date type is mostly preferred when working with JPA. The util Date provides a standardized way to work with dates in JPA. The util Date provides date and time with millisecond precision.
+
+The @temporal annotation is used in conjunction with the Date type. The @temporal annotation has required a single parameter of type TemporalType. There are three Temporal types **DATE**, **TIME**, and **TIMESTAMP**. Let's look at each one of them.
+
+Let's annotate the member variable with @temporal with **TemporalType** as **Date**.
+
+> **_Check out the previous posts to know how to set up the Java project with JPA and database._**
+
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+    private String admission_no;
+    @Column(name = "student_name")
+    private String name;
+    private int age;
+    @Temporal(TemporalType.DATE)
+    private Date dob;
+}
+```
+Now persisting the student entity in the database.
+
+``` Java
+public class Main {
+    public static void main(String[] args) {
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("myPersistenceUnit");
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        Student student1 = new Student();
+        student1.setName("Sohail Shah");
+        student1.setAge(18);
+        student1.setAdmission_no("1234");
+        student1.setDob(new Date());
+
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        //persist the student entity
+        entityManager.persist(student1);
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+}
+```
+The **TemporalType.DATE** persists only the date. Now check the database for the values.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xavcn6jtcw3c48rt8pab.png)
+
+To persist the timestamp we can change the **TemporalType** to **TIMESTAMP**. 
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+    private String admission_no;
+    @Column(name = "student_name")
+    private String name;
+    private int age;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date dob;
+}
+```
+After persisting the student entity, check the database for the values. The date of birth field contains the date with time.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/88v8ssrn0eidpxgy3d66.png)
+
+To persist only the time change the **TemporalType** to **TemporalType.TIME**
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+    private String admission_no;
+    @Column(name = "student_name")
+    private String name;
+    private int age;
+    @Temporal(TemporalType.TIME)
+    private Date dob;
+}
+```
+Persist the student entity and in the database, we can see only the time is persisted.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/jfi4v8qlenby7k0hm0vb.png)
+
+## **Enumeration**
+To persist enumeration values to database columns using JPA is to use the @Enumerated annotation. The @Enumerated annotation tells the JPA to map the enum value to the database.
+
+Let's add a member variable student type to our student entity which is an enum.
+
+``` Java
+public enum StudentType {
+    SCHOLARSHIP,
+    NON_SCHOLARSHIP
+}
+
+``` 
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+    private String admission_no;
+    @Column(name = "student_name")
+    private String name;
+    private int age;
+    @Temporal(TemporalType.TIME)
+    private Date dob;
+    private StudentType studentType;
+}
+```
+Now annotate the student type member variable with **@Enumerated**
+
+``` Java
+    @Enumerated
+    private StudentType studentType;
+```
+That's it, now we can persist the student entity and check the database.
+
+``` Java
+        Student student1 = new Student();
+        student1.setName("Sohail Shah");
+        student1.setAge(18);
+        student1.setAdmission_no("1234");
+        student1.setDob(new Date());
+        student1.setStudentType(StudentType.SCHOLARSHIP);
+```
+
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/02p83i054h31j7y286fo.png)
+
+The value of student type in the database column is set to 0. That's because by default enum type is set to ordinal. When enum type is set to ordinal, JPA persists the position of the enum in the enum class. In our example, The StudentType enum class has two constant strings, SCHOLARSHIP with position 0 and NON_SCHOLARSHIP with position 1. Since we set the student type to StudentType.SCHOLARSHIP it's position was persisted.
+
+This behaviour can be changed by setting the **EnumType** as String in the **@Enumerated** annotation parameter. Let's do it now.
+``` Java
+    @Enumerated(EnumType.STRING)
+    private StudentType studentType;
+```
+Now persist the student entity and check the database.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/z12w3pzeg7eifcxuhp3v.png)
+The actual value of the string is saved to the database.
+Use the enum type in annotation parameter as per your needs, either as **EnumType.STRING** or **EnumType.ORDINAL**.
+
+But be careful with using enum in your entities. If the enum type is set to ordinal, you cannot change the positions of constant strings in the enum class. If the enum type is set to string then you can change the position but cannot change the spellings of it. Doing both will lead to data inconsistencies in the database.

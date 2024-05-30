@@ -1,0 +1,91 @@
+---
+title: Different Ways To Use Comparator Interface in Java
+description: In this post, we will explore various ways to use the Comparator interface in Java to compare objects and sort collections
+published: 15 07 2023 2 PM
+slug: different-ways-to-use-comparator-interface-in-java
+---
+
+In this post, we will explore various ways to use the Comparator interface in Java to compare objects and sort collections
+
+Let's assume we have a list of Student objects, with a Student class that has some member variables. We'll use this as an example through the post.
+
+``` Java
+public class Student {
+    private int id;
+    private String firstName;
+    private String lastName;
+    private Date age;
+}
+```
+
+``` Java
+List<Student> list = new ArrayList<>();
+```
+
+## 1. Create a Class Implementing Comparator
+One way to use the Comparator interface is by creating a separate class that implements the Comparator interface. This class will provide the logic for comparing objects based on specific criteria. You can then instantiate this class and use it to sort collections of objects. This approach allows for a flexible and reusable way of defining custom sorting logic.
+
+
+Now let's create our custom class that implements the Comparator Interface
+
+``` Java
+class StudentComparator implements Comparator<Student>{
+    @Override
+    public int compare(Student o1, Student o2) {
+        return o1.getId() - o2.getId();
+    }
+}
+```
+This class compares the students based on their id's. Now passing an instance of this class in the sort method of the Collections util class sorts the list in ascending order of id's
+
+``` Java
+StudentComparator studentComparator = new StudentComparator();
+Collections.sort(list,studentComparator);
+```
+This is one way to use the Comparator interface. You can create multiple classes implementing the comparator interface for different custom sorting logic.
+
+## 2. Using Lambda Expressions
+Another way to utilize the Comparator interface is by using lambda expressions. Lambda expressions provide a concise way to define the comparison logic inline, without the need to create a separate class. This approach is often preferred for simple comparisons and can lead to more readable code.
+
+``` Java
+Comparator<Student> compareWithId = (s1, s2) -> s1.getId() - s2.getId();
+list.sort(compareWithId);
+```
+
+## 3. Using Method Reference
+Method reference is another approach to using the Comparator interface. It allows you to refer to an existing method and use it as the comparison logic. This approach can be useful when you have an existing method that already provides the desired comparison behavior. Method references reduce code duplication and enhance code readability.
+
+``` Java
+list.sort(Comparator.comparing(Student::getFirstName));
+```
+This is so much simple than the previous ones.
+
+## 4. Creating a Utility Class
+If you find yourself using the same comparison logic across multiple projects or classes, it may be beneficial to create a utility class. This utility class can contain static methods that implement the comparison logic you need. By encapsulating the comparison logic in a utility class, you can easily reuse it and keep your code clean and organized.
+
+``` Java
+public class StudentUtil {
+    public static Comparator<Student> compareById(){
+        return Comparator.comparing(Student::getId);
+    }
+    public static Comparator<Student> compareByFirstName(){
+        return Comparator.comparing(Student::getFirstName);
+    }
+    public static Comparator<Student> compareByLastName(){
+        return Comparator.comparing(Student::getLastName);
+    }
+    public static Comparator<Student> compareByAge(){
+        return Comparator.comparing(Student::getAge);
+    }
+}
+```
+
+Now you can use the static methods of the utility class in multiple classes in your project.
+
+``` Java
+list.sort(StudentUtil.compareByAge());
+```
+
+By exploring these different ways of using the Comparator interface, you can gain a deeper understanding of how to compare objects and sort collections based on different criteria. Each approach has its own benefits and can be selected based on the complexity of the comparison logic and the specific requirements of your project.
+
+I hope this blog post helps you in understanding the different ways to use the Comparator interface. Happy coding!
