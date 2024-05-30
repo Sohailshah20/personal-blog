@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/navbar";
-import { Fira_Code, Libre_Baskerville } from "next/font/google";
+import { Fira_Code } from "next/font/google";
 import localFont from 'next/font/local'
 import "./globals.css";
 
@@ -14,14 +14,6 @@ const satoshiFont = localFont({
   src: './Satoshi-Regular.woff',
   display: 'swap',
   variable: "--font-regular"
-})
-
-const LibreBaskerFont=Libre_Baskerville({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-libre",
-  weight:"400",
-  style:"italic"
 })
 
 const font = Fira_Code({
@@ -38,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${satoshiFont.variable} ${LibreBaskerFont.variable} dark`}
+      className={`${satoshiFont.variable} dark`}
     >
       <body
         className="font-regular max-w-[900px] text-lg mx-auto sm:px-0 px-6 tracking-wide"

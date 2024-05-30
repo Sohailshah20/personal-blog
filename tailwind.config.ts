@@ -56,7 +56,6 @@ const config = {
 			fontFamily: {
 				code: ["var(--font-code)"],
 				regular: ["var(--font-regular)"],
-				libre:["var(--font-libre)"]
 			},
 			borderRadius: {
 				lg: "var(--radius)",

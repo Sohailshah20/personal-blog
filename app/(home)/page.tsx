@@ -1,5 +1,5 @@
 import { buttonVariants } from "@/components/ui/button";
-import {  GithubIcon, TwitterIcon } from "lucide-react";
+import { GithubIcon, TwitterIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,10 +8,7 @@ export default function Home() {
     <div>
       <div>
         <div className="text-4xl mb-5 font-semibold">
-          Hey, I&apos;m <span className="font-libre">
-            Mohammad Sohail Ali
-            </span>
-        </div>
+          Hey, I&apos;m Mohammad Sohail Ali</div>
         <div className="flex sm:flex-row flex-col items-start gap-8 mt-9">
           <div className="flex flex-col items-center flex-[1]">
             <Image
@@ -27,7 +24,7 @@ export default function Home() {
             <div className="flex flex-row items-center">
               <Link
                 href="https://github.com/sohailshah20"
-                className={buttonVariants({ variant: "link",className:'text-base' },)}
+                className={buttonVariants({ variant: "link", className: 'text-base' },)}
               >
                 <GithubIcon className="mr-1 w-4 h-4" />
                 GitHub
@@ -53,10 +50,10 @@ export default function Home() {
       </div>
       <div className="mt-8 flex flex-col gap-6">
         <p className="text-lg prose dark:prose-invert prose-p:m-0">
-        <span className="font-semibold text-primary">Work:</span> I currently work as a Software Engineer at Synectiks, where I lead the development of internal applications integrating various AWS services. I have previously interned as a Java-Backend Software Engineer at Wink Software, where I developed core functionalities using Java and Spring Boot. My current experience includes developing highly scalable microservice applications and CLI tools using GoLang and AWS cloud APIs.
+          <span className="font-semibold text-primary">Work:</span> I currently work as a Software Engineer at Synectiks, where I lead the development of internal applications integrating various AWS services. I have previously interned as a Java-Backend Software Engineer at Wink Software, where I developed core functionalities using Java and Spring Boot. My current experience includes developing highly scalable microservice applications and CLI tools using GoLang and AWS cloud APIs.
         </p>
         <p className="text-lg prose dark:prose-invert prose-p:m-0">
-        <span className="font-semibold text-primary">Skills:</span> My expertise includes Java, JavaScript, Go, SQL, Spring/SpringBoot, NodeJS, AWS, Serverless technologies, Docker, Microservices, HTML, and CSS. I love diving deep into topics and getting into the nitty-gritty details until I fully understand them.
+          <span className="font-semibold text-primary">Skills:</span> My expertise includes Java, JavaScript, Go, SQL, Spring/SpringBoot, NodeJS, AWS, Serverless technologies, Docker, Microservices, HTML, and CSS. I love diving deep into topics and getting into the nitty-gritty details until I fully understand them.
         </p>
         <p className="text-lg prose dark:prose-invert prose-p:m-0">
           <span className="font-semibold text-primary">Personal:</span> When I am not coding or designing applications, I spend my time watching movies and anime. I hold a Bachelor{"'"}s degree in Computer Science Engineering from Muffakham Jah College of Engineering & Technology. Unlike most people from Hyderabad, I am not a big foodie. And i like cats!

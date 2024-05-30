@@ -1,4 +1,7 @@
 copy:
 	@cp -r /mnt/c/Users/Mohammad.Ali/Downloads/doc_images/* .
 
-.PHONY: copy
+run:
+	@npm run dev
+
+.PHONY: copy run
