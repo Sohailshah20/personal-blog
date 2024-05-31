@@ -1,0 +1,193 @@
+---
+title: JPA One-To-Many, Many-To-One And Many-To-Many Relationships
+description: In this post, we'll be looking at the components that form spring security and understand how the spring security architecture works.
+published: 21 07 2023 2 PM
+slug: onetomany-manytoone-manytomany-relationships
+---
+
+In the previous post, we looked at one-to-one relationship. In this post, we will look at one-to-many, many-to-one, and many-to-many relationships.
+
+# Many-To-One Relationship
+In a many-to-one relationship, multiple entities are associated with exactly one other entity. In terms of database tables, multiple records in a table can be associated with exactly one record in other table.
+
+To understand it better, let's create an entity called assignment. The assignment entity contains the following member variables.
+``` Java
+@Entity
+@Table(name = "grade_table")
+public class Assignment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int id;
+    private String title;
+    @Temporal(value = TemporalType.DATE)
+    private Date dueDate;
+}
+```
+The idea here is that there can be many assignments assigned to a single student. Therefore, we can establish a many to one relationship between student and assignment entities.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/i40xt601tci0zd9ft4m0.png)
+To achieve this, we are going to use the **@ManyToOne** annotation. Now the question is in which entity do we put this annotation? In the student entity or in the assignment entity?
+
+While modeling these kinds of relationships we also need to understand how table records are going to be affected, only then we can decide in which entity to put the annotation.
+
+Let's assume we simply put in the student entity as we did in one to one relationship. Then it is expected that there is a foreign key column in the student table with the primary keys of assignment entities. since a student can have more than one assignment storing multiple keys in a single column is not possible.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/998fhdjn90vnpp8ekzb1.png)
+It should be noticed that multiple assignments are going to be assigned to a single student. So instead we can store student ids in the foreign key column of the assignment table. Let's do that now
+``` Java
+@Entity
+@Table(name = "grade_table")
+public class Assignment {
+    .
+    .
+    .
+    @ManyToOne
+    private Student assignedTo;
+}
+```
+Create a couple of new assignment objects and persist them in the database with the new relationship. 
+``` Java
+Assignment assl = new Assignment();
+assl.setTitle("JAVA");
+assl.setDueDate(new Date());
+assl.setAssignedTo(studentl) ;
+Assignment ass2 = new Assignment();
+ass2.setTitte("DSA");
+ass2.setDueDate(new Date()) ;
+ass2.setAssignedTo(studentl) ;
+```
+In the database, we can see there is no change to the student table. The new assignment table has two assignments with the same student ids.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/2ba2wqnstog5h9yl36wu.png)
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r66g6lfn9dnxthfg5era.png)
+# One-To-Many Relationship
+If fetch student details we won't be able to get the assignments assigned to the students. That's because the student entity has no access to the assignment entity. As we have seen in the one-to-one relationship we can solve this by simply mirroring the relationship in the student entity. When mirroring the relationship it is important to define a primary entity and the other entity automatically becomes the mirrored entity. Which entity becomes the primary is up to the database design and the data itself. We discussed it in the previous post. Check it out to understand it in more detail and other implications of it.
+
+To mirror the many-to-one relationship in the student entity, we need a list of assignments because there can be many assignments for a student.
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+    .
+    .
+    .
+    @OneToMany(mappedBy = "assignedTo")
+    private List<Assignment> assignmentList;
+}
+```
+One-to-many and many-to-one mirror each other. Sometimes we can get confused about which annotation to use in which entity. well here’s a trick, In the above example Student entity has many assignment entities. Read it as **one** student has **many** assignments. Thus **@OneToMany** annotation. In the same way, the assignment entity read it as **many** assignments but **one** student thus **@ManyToOne** annotation.
+
+Let's fetch the student details again and see the result.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/o9fkju7iay1to8fjgvjq.png)
+>Since student and assignment entities mirror each other's relationship, make sure to format the **toSting()** method in both entities properly so that they don't access each other's data resulting in an infinite loop.
+
+The two assignments are present in the student details. Now we can easily access the assignment data from the student data and vice versa.
+
+## Fetch Type
+In the previous post, we saw that the default fetch type is eager. But that's not the case with many-to-one and one-to-many relationships. The default fetch type is **lazy**. It makes sense because we don't want to fetch different multiple entities along with the student entity. The assignment data is fetched only when it is accessed.
+
+Do check the hibernate-generated queries to understand more in detail.
+
+# Many-To-Many Relationship
+To understand the many-to-many relationship let's create an entity called club. The club entity contains the following member variables
+``` Java
+@Entity
+@Table(name = "Student_club")
+public class Club {
+    @Id
+    @GeneratedValue
+    private int id;
+    private int name;
+}
+```
+In a many-to-many relationship, multiple records in one table can be associated with multiple records in another table. In our example, a student can be part of many clubs, and a club can have many students. To represent this relationship in a database, we typically use a junction table or an associative table.
+![Image 1](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/hcj2sd26vqdmaosvijdm.png) ![Image 2](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/112ouw805q7125szil60.png)
+In the case of one-to-many and many-to-one relationships, we noticed that a foreign key in a table can reference only one primary key. So we referenced the primary keys of the student to the foreign key column of the assignment table. But in the case of many-to-many relationship, it is not possible to directly use a single foreign key to establish the association between the two entities. This is because both entities are associated with multiple instances of each other.
+
+This problem is solved using a junction table approach. A junction table is an entirely new table that acts as a bridge between the two entities and establishes the many-to-many relationship. In a junction table, there exits foreign key columns that contain the primary keys of both entities.
+
+Now let's add the **@ManyToMany** annotation to the member variables of the entities we want.
+``` Java
+@Entity
+@Table(name = "Student_club")
+public class Club {
+    @Id
+    @GeneratedValue
+    private int id;
+    private int name;
+    @ManyToMany
+    private List<Student> studentList;
+}
+```
+``` Java
+@Entity
+@Table(name = "Student_Table")
+public class Student {
+		.
+		.
+    @ManyToMany  
+    private List<Club> clubs;
+}
+```
+If you noticed, the members are of type list indicating the kind of relationship we are establishing here. We might have members annotated the variables are annotated with **@ManyToMany** but it doesn’t precisely establish the relation as we want. 
+
+Let's create a couple of club and student objects and persist them in the database. By doing so we can observe what exactly happens to the database tables.
+``` Java
+//Student 1 object
+Student student1 = new Student();
+student1.setName("Sohail Shah");
+student1.setAge(18);
+student1.setAdmission_no("1234");
+student1.setDob(new Date());
+student1.setStudentType(StudentType.SCHOLARSHIP);
+//Student 2 object
+Student student2 = new Student();
+student2.setName("Ali");
+student2.setAge(20);
+student2.setAdmission_no("1235");
+student2.setDob(new Date());
+student2.setStudentType(StudentType.NON_SCHOLARSHIP);
+//club 1 object
+Club club1 = new Club();
+club1.setName("Java Club");
+club1.addStudent(student1);
+club1.addStudent(student2);
+student1.addClub(club1);
+student2.addClub(club1);
+//club 2 object
+Club club2 = new Club();
+club2.setName("Spring Club");
+club2.addStudent(student2);
+student2.addClub(club2);
+student1.addClub(club1);
+student1.addClub(club2);
+student2.addClub(club1);
+student2.addClub(club2);
+//persisting the objects				
+entityManager.persist(student1);
+entityManager.persist(student2);
+entityManager.persist(club1);
+entityManager.persist(club2);
+```
+After running the application, in the database, we'll have two different tables with the same data or foreign keys that are just mirrored.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/x7zsf16q5st6up5atd03.png)
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/gt0lvncj38xtf4l3rd1y.png)
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/l8ae8dwtwauz0n6o75o0.png)
+The JPA doesn't know both these tables contain the same data and it is tracking them twice.
+
+This is easily solved by using the mappedBy parameter in the many-to-many annotation. We have used this in other relationships too. You can put the mappedBy in any of the entities.
+``` Java
+@ManyToMany(mappedBy = "clubs")
+private List<Student> studentList = new ArrayList<>()
+```
+If we run the application again, there should be only one table containing the primary keys of both entities.
+
+Make sure you properly use
+``` XML
+<property name="hibernate.hbm2ddl.auto" value="create"/>
+```
+ in order to see the correct data. If getting errors just drop tables and run the application again.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ug26lcppsbdgn40xxa3h.png)
+## Fetch
+The default fetch type for many-to-many relationship is lazy same as one-to-many and many-to-one. You can of course change this default behaviour by using the **FETCH.EAGER** and **FETCH.LAZY**
+
+Deciding the fetch type depends on your database schema and needs. A lazy fetch type is usually recommended for many-to-many relationships.
