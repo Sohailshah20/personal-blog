@@ -1,0 +1,128 @@
+---
+title: Implement Service Discovery Pattern With Eureka And Consul
+description: In this post, we'll implement service discovery pattern with eureka and consul
+published: 31 07 2023 2 PM
+slug: service-discovery-with-eureka-and-consul
+---
+
+In the previous post, we looked at what Discovery Server in microservices is and what are the problems it solves. In the post, we’ll implement the service discovery pattern with Eureka and Consul with Spring Boot.
+
+# Netflix Eureka
+Netflix Eureka is one of the most popular open-source solutions to achieve service discovery. Eureka is also part of Spring Cloud tools, providing quick and easy configuration to get started.
+
+Let’s set up the discovery server. Create a spring boot application with only the following dependency. You can use the spring initializer site to create the application easily. If you don’t use the spring initializer site, make sure to add the cloud dependencies.
+
+``` XML
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+```
+The next step is to add the **_@EnableEurekaServer_** annotation on top of the main class of the application. Adding this annotation is optional. It does not affect the discovery server functionality. It is just for code readability.
+
+With the dependency added and spring boot providing auto-configuration with sensible defaults, we can run the application and it’ll work fine. But you’ll see some error messages in the console that’s because by default the discovery server also acts as a discovery client and tries to register itself with other discovery servers. In this demo, we only have one discovery server. We have to configure our discovery server such that it does not act as the client itself.
+
+Configuring the discovery server can be done in two ways, either programmatically by defining beans or by defining the configuration in the **_application.properties_** or the **_application.yml_** file. It is recommended to do it in the yml file.
+
+``` YML
+spring:
+  application:
+    name: discovery-client
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+```
+In the yml file, the discovery server port is set to **8761** as is the default port. The Eureka client properties **register-with-eureka** and **fetch-registry** is set to false.
+
+Setting the register-with-eureka property to false stops the discovery server to register itself with other discovery servers and setting the **fetch-registry** to false stops our discovery server to fetch registry data from other discovery servers since there is only one discovery server in this demo.
+
+Now let’s set up the discovery client(s), that can be discovered by the discovery server. The discovery client is our spring boot application providing services as a microservice. You can create a new spring boot application or use an existing application to act as a discovery client that can register itself with the discovery server.
+
+All you have to do is to add the following dependency and we are ready to run the application.
+
+``` XML
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+In the application.yml file, change the name of the application to see the same name in the service registry.
+
+``` YML
+spring:
+  application:
+    name: discovery-client
+
+server:
+  port: 9000
+```
+Now with both applications running, visit localhost:8761 in the browser. We can see that our client application has successfully registered itself with the discovery server.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/x0ubh35u130x2w4gwl2p.png)
+We have configured both the discovery server and the discovery client with the minimum configuration to set up the discovery service mechanism. That being said, the Netflix Eureka comes with many other features like loading balancing and there are tons of configurations available to make services secure, highly available, and resilient.
+
+Check out the [GitHub ](https://github.com/Sohailshah20/service-discovery-pattern-demo/tree/main/eureka)repository for the same.
+
+# HashiCorp Consul
+Consul is a tool developed by HashCorp, known for developing Terraform. Apart from service discovery, the consul provides a key-value store, centralised configuration, network security, and several other features. But in this post, we are only interested in the service discovery aspect of it.
+
+To get started with Consul, we can spin up a docker container or download the executable from the official site.
+
+Let’s see how to run a docker container. First, pull the consul image using the command below.
+
+``` bash
+$ docker pull hashicorp/consul
+```
+Create and run the container on the default port 8500 with below command
+
+``` bash
+$ docker run --name consul -d -p 8500:8500 hashicorp/consul
+```
+The same can be done without docker by directly running the executable file downloaded.
+
+Extract the .exe file and in the directory where the file is present run the following command in the terminal
+
+``` bash
+.\consul agent -dev -enable-script-checks -node=web -ui
+```
+>Note I’m running the command on windows. For other OS check out the official documentation
+
+Now visit **_localhost:8500/ui_** to check out the web UI. In the services section, you can see one instance of consul discovery server running.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ffwf98exeojcpqkkudyc.png)
+For the microservices to register themselves to the registry, add the following dependencies in the pom.xml file
+
+``` XML
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+</dependency>
+```
+By adding the consul discovery dependency to the classpath of our application, spring-boot auto-configures the application to register itself with the consul service registry.
+
+Also, we need the web dependency as the service discovery mechanism is happening over the **HTTP **protocol.
+
+You can add the optional **_@EnableDiscoveryClient_** annotation on the main class of the application. In the **_application.yml_** file configure the name and port of the application.
+
+``` YML
+spring:
+  application:
+    name: discovery-client
+
+server:
+  port: 900
+```
+Now if we run the application and check out the consul web UI. We can see that our application has registered itself in the service registery.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/stl264fvrhv1937llji9.png)
+
+Check out the [GitHub ](https://github.com/Sohailshah20/service-discovery-pattern-demo/tree/main/consul/consul-discovery-client)repository for the same.

@@ -1,0 +1,91 @@
+---
+title: Transactions And Transaction Propagation
+description: In this post, we'll learn what is a transaction in a database and what is a transaction propagation.
+published: 16 08 2023 2 PM
+slug: transactions-and-transaction-propagation
+---
+
+Let’s begin this post, by understanding what is a transaction
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/pz3zrhlh1gt2cewa5dz4.png)
+
+
+# What is a Transaction?
+To define in simple terms, a transaction is an atomic unit of work. In the context of software applications, it represents a single, coherent unit of work that consists of multiple operations.
+
+Transactions primarily belong to the context of databases. A transaction in a database represents a unit of work that consists of multiple database operations such as insert, select, update, or delete. While transactions are managed by the database itself, software applications that connect with the database play a vital role in initiating and controlling the transactions.
+
+Transactions are a fundamental aspect of relational databases and even some non-relational databases also provide transactional ability.
+
+# Why the need for transactions?
+The purpose of using transactions is to ensure data integrity and consistency. When multiple operations are grouped into a transaction, they are either all completed successfully or none of them are applied, which helps maintain the accuracy and reliability of the data.
+
+E-Commerce, banking and finance, reservation systems, and supply chain management are a few examples of domains where their software applications need to have consistent and accurate data to perform operations without discrepancies and guarantee reliable customer experience.
+
+Let’s take an example of buying a product from an e-commerce site. When the buy product button is clicked, the order is confirmed. To confirm the order multiple operations can take place like checking product availability, reserving the product, updating the inventory, creating the order, payment, and order confirmation.
+>This is just an example, in a real case much more complicated operations take place.
+
+The buy-product method is put in a transaction context to make sure all the operations occur or neither of them.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/5tp83p205aakpml6ph2f.png)
+The annotation is used in spring applications to define and manage transactions for methods.
+
+When a method is marked with **_@Transactional_** annotation by default:
+- Changes are rollbacked if any RuntimeException is thrown by the method
+- Changes are not rollbacked if any Checked Exception is thrown by the method
+
+This default behavior for rollback can be changed by passing particular **RuntimeExceptions** and **Checked Exceptions** for **_rollbackFor_** and **_noRollbackFor_** parameters for the **_@Transactional_** annotation
+
+``` Java
+@Transactional(
+            rollbackFor = DuplicateUserException.class,
+            noRollbackFor = IllegalArgumentException.class
+)
+```
+# Transaction Propagation
+In spring applications, to execute a method in a transaction context, the **_@Transactional_** annotation on top of a method. When a method with a transaction calls multiple other methods, transactions are propagated from one method to another. We might want to manage the transaction propagation behavior differently to different methods depending on their functionality.
+
+From the above example, we know that single action, such as buying a product, involves carrying out several individual tasks. The buy method will include all the individual method calls to make up a single cohesive unit.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/7ywh9c4clal0je9jdoza.png)
+#### Propagation.REQUIRED
+By default, propagation is set to required. When a method is annotated with **_@Transactional(propagation = Propagation.REQUIRED)_**, the method will always require a transaction context to execute.
+
+Method marked with **Propagation.REQUIRED** when called from another method.
+
+- If there is no transaction, a new transaction is created
+- If a transaction is already present, the method is executed in the same transaction context
+
+In our example, let’s say the check product availability is marked with required propagation, so it will execute in the same transaction context as buy product method.
+
+#### Propagation.REQUIRES_NEW
+When a method is marked with **_@Transactional(propagation = Propagation.REQUIRES_NEW)_**, a new transaction context is created every time the method is executed, even if it is called from a method with a transaction already present.
+
+There can be a requirement such that if one particular operation like sending mail is part of the buy-product method, fails for some reason you don’t want the entire transaction to fail. Because sending mail should not affect the customer buying the product.
+
+#### Propagation.MANDATORY
+As the name suggests, when a method is marked with **_@Transactional(propagation = Propagation.MANDATORY)_**, it always requires a transaction context to execute.
+
+- Using this propagation doesn’t create a transaction of its own but makes sure that there is a transaction context when calling the method.
+- Methods marked with mandatory, when called from a method that doesn't have any transaction will fail with an exception from the transaction manager
+
+#### Propagation.NEVER
+When a method marked is marked with **_@Transactional(propagation = Propagation.NEVER)_**, it means never it requires a transaction context for execution.
+
+If a method is marked with **Propagation.NEVER** and called from a method with a transactions context, it will with an exception. It behaves the opposite of **Propagation.MANDATORY**
+
+#### Propagation.SUPPORTS
+When a method is marked with **_@Transactional(propagation = Propagation.NEVER)_**, the method can be called from a transaction context or without a transaction context.
+
+As the name implies, it supports being executed in a transaction context but doesn’t create a new transaction on its own rather executes within the called methods transaction context. At the same time, the method can also be called from a method with no transaction context just like a normal method. **Propagation.SUPPORTS** is like a middle ground for **Propagation.MANDATORY** and **Propagation.NEVER**
+
+#### Propagation.NOT_SUPPORTED
+When a method is marked with **_@Transactional(propagation = Propagation.NOT_SUPPORTED)_**, the method executes without a transaction.
+
+The method can be called from a method either with a transactional or without a transaction. But even when called from a method with a transaction context, the method marked with **Propagation.NOT_SUPPORTED** will always execute with any transaction context.
+
+Let’s say the buy product consists of a method that has a single select query that reads data from the database. It’s logical that this method doesn’t require any transaction for execution as it is not making any changes to the database.
+
+--------------
+
+ we'll cover transaction isolation in another post

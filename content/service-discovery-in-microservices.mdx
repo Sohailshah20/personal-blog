@@ -1,0 +1,65 @@
+---
+title: Service Discovery in Microservices
+description: In this post, microservices are discovered and registred in a microservice environment using service discovery
+published: 26 07 2023 2 PM
+slug: service-discovery-in-microservices
+---
+
+# What is Service Discovery?
+
+In modern cloud-based applications, there are multiple services running with multiple instances of some of them. It's common that each service communicates with each other to provide services. In order to communicate with each other each service need to know the network address and port other services.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/cxc46woyyw0wq1lhqltv.png)
+We can hard code the network address and ports initially but we’ll run into a lot of problems quickly.
+
+What if we need to dynamically scale horizontally meaning adding more instances of a service to handle increased load? How do we load-balance the requests to each instance?
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/z9lamvk91qr0ogkz4r5y.png)
+In modern cloud applications, each service has its network address assigned dynamically, and the number of services running also changes frequently due to horizontal scaling.
+
+Deploying new versions of services will break the communication if paths are hardcoded, communicating with new services becomes difficult and requires a lot of manual changes. Hence the need for a service discovery mechanism.
+
+_**A service discovery acts as a registry that holds the addresses of all the instances of services**_
+
+There are two types of Service discovery patterns
+1.Client Side Discovery
+2.Server Side Discovery
+
+## Client Side Discovery
+In a client-side discovery mechanism, a service is responsible for determining the address of each instance available. Also, the service itself is responsible for load-balancing the requests between the instances using a suitable load-balancing algorithm.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8k7w8fg1tg635esw0tgr.png)
+Advantages of client-side service registry:
+
+- Straight forward to implement
+- Since addresses of instances are known beforehand, efficient load-balancing algorithms can be employed
+- In the event that the service discovery is down, the address can be cached to continue functioning.
+- Reduced latency as we don't have to make an extra hop if we had a centralized load balancer.
+
+Disadvantages of client-side service registry:
+
+- The service is tightly coupled to the service registry
+- Each service must implement client-side discovery logic for the programming language and framework used by the service.
+
+## Server Side Discovery
+In the server-side discovery mechanism, each service communicates with other services through a dedicated load balancer. The load balancer makes the request by querying the service registry and routes each request to the appropriate instance available.
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/6s2fstpcido9u5pr9u4l.png)
+
+Advantages of server-side discovery:
+
+- Service becomes lighter as it doesn’t have to deal with service registry lookups
+- No need to implement service discovery logic for different languages and frameworks used by services
+
+Disadvantages of server-side discovery:
+
+- Set up and manage a dedicated load balancer
+- A centralized service registry can be a single point of failure for the entire system
+- Network latency is increased as each request has to go through the load balancer and service registry
+
+## Service Registration Model
+Up until now, we have assumed that the service registry already knows the addresses of the services. Let's see how services register and deregister themselves with the service registry.
+
+## Self-Registration
+In a self-registration model, each service has the responsibility of registering and de-registering themselves in the service registry. Once registered, the service needs to send hearts beats/ ping the service registry to keep the registration alive.
+
+## Third-Party Registration
+In the third-party registration model, the services are not responsible for registering themselves to the service registry. Instead, another component in the system known as the service registrar is responsible for registering the services in the service registry. The service registrar keeps track of changes by polling the deployment environment or subscribing to events. When a new service is available it registers it in the service registry and de-registers it once it gets terminated.
+
+In conclusion, service discovery is a database that has the addresses of the service instances. It must be highly available and up-to-date.

@@ -1,0 +1,133 @@
+---
+title: Using Optional in Java the right way
+description: In this post, we'll learn what is Optinal in Java, how it is useful in prventing null pointer execptions.
+published: 21 08 2023 2 PM
+slug: optional-in-java
+---
+
+It doesn't matter how much time you have been programming, **NullPointerException** is one of the most frustrating problems you'll face.
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ae4m27q8lduyltpxwrka.png)
+The Optional class was introduced in Java 8 to tackle the problem of **_NullPointerException_**'s.
+
+The class is a generic type class that contains only one value of type **T**. Its purpose is to provide a safer alternative to reference objects of a type T that can be null. But optional objects are safe only when used the right way. 
+
+``` Java 
+java.util.Optional<T>
+``` 
+
+Let's see the ways you can create optional objects
+
+### Empty Optional
+Using the **Optional.empty()** we can create an optional object which is empty of any type
+
+``` Java
+//returning a empty optional of type string
+public static Optional<String> emptyOptional(){
+       return Optional.empty();
+    } 
+
+//or
+Optional<String> str = Optional.empty();
+```
+### Nullable Optional
+Using the **Optional.ofNullable()** method we can create nullable optional objects. These objects can be null or have values in them
+
+``` Java
+public static Optional<Wallet> getWallet(){
+        return Optional.ofNullable(null);
+    }
+```
+### Non-Nullable Optional
+Using the **Optional.of()** method we can create non-nullable optional objects.
+
+``` Java
+public static Optional<Wallet> getWallet(){
+        return Optional.of(new Wallet(100));
+    }
+```
+Now let's look at different methods present in the Optional class that we can leverage to write clean code promoting null safety.
+
+The **get()** method in the optional class gets the value if it exists or throws a **NoSuchElementException**
+
+For example, let's say we have an object **Wallet** with private filed money. To get the money value we can do as below
+
+``` Java
+//normal way to get money 
+int savings = wallet.getMoney();
+
+//when wallet object is wrapped in a optional 
+int savings = optionalWallet.get().getMoney();
+```
+If the wallet object is null the second way is safer than the first way as it thorws **NoSuchElementException** instead of **NullPointerException**
+
+We can improve the second way by using the **isPresent()** method which returns a boolean for whether the value is present or not.
+
+``` Java
+List<Integer> savings = new ArrayList();
+if(optionalWallet.isPresent()){
+    savings.add(optionalWallet.get().getMoney());
+}
+```
+But at the same time, this way of doing is not less verbose than checking for not null.
+
+``` Java
+List<Integer> savings = new ArrayList();
+if(wallet != null){
+  savings .add(wallet.getMoney());
+}
+```
+To make the code more concise and clear, we can use **ifPresent()** method which takes a consumer or a runnable, or both. Using **ifPresent()** we can either consume a correct value or produce an alternative. Let's see how
+
+``` Java
+List<Integer> savings = new ArrayList();
+optionalWallet.ifPresent(wallet -> savings.add(wallet.getMoney()));
+```
+In the above example, money is added to savings only when the wallet is not null i.e., when it is present.
+
+In case we were adding the wallet itself to the list
+
+``` Java
+//using lambda
+List<Wallet> wallets  = new ArrayList<>();
+optionalWallet.ifPresent(wallet -> wallets.add(wallet));
+
+//you can also use method reference
+List<Wallet> wallets  = new ArrayList<>();
+optionalWallet.ifPresent(wallets::add);
+```
+As you can see it is much better than the examples in the beginning.
+
+There can be some scenarios where you might want to have a default value when the optional is empty, using the **orElse()** method we can produce an alternative value when the optional is null. Let's see an example
+
+``` Java
+List<Wallet> wallets  = new ArrayList<>();
+Wallet wallet = optionalWallet.orElse(new Wallet(0));
+wallets.add(wallet);
+```
+In the above example, if the optionalWallet contains a value it is assigned to the wallet variable if not a default wallet with value 0 is assigned. The **orElse()** method can be used with any other type to produce default values.
+
+You can also invoke a block of code inside the **orElseGet()** method to calculate a default value
+
+``` Java
+//calculating a default value 
+Wallet wallet = optionalWallet.orElseGet(() -> {
+            int randomAmount = (int) (Math.random() * 500); // Generating a random amount between 0 and 500
+            return new Wallet(randomAmount);
+});
+```
+When working with spring boot applications and a database, when we make a select query to get a user, it is a good practice to wrap the user object around an optional, then we can do something like this
+
+``` Java
+//Getting the user from database
+Optional<User> findUserById(String id);
+
+//Calling the find user method 
+User user = findUserById(id)
+                    .orElseThrow(UserNotFoundException::new);
+```
+In the above example, you can see, we didn't have to do any checks whether the user is not or not. If the user is present in the database we'll get the user, if not we gracefully throw an exception then and there itself.
+
+***
+
+These were some better ways to use the Optionals in Java.

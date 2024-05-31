@@ -1,0 +1,207 @@
+---
+title: Create Persistence Unit Without The persistence.xml file
+description: learn how to create persistence unit without the persistence.xml file.
+published: 12 09 2023 2 PM
+slug: persistence-unit-witout-persistence.xml
+---
+
+When working with JPA with Java applications, we usually create a persistence unit in the persistence.xml file as below.
+
+``` XML
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <persistence-unit name="myPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <description>persistence unit description</description>
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <properties>
+            <!-- Database connection properties -->
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+
+            <!-- Hibernate properties -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+```
+The persistence unit can also be created programmatically without creating an XML file. 
+
+The persistence unit is created as a Java class which represents all the properties present in the XML file. This class must implement the interface **PersistenceUnitInfo** which defines the contact that needs to be fulfilled in order to create the persistence unit.
+
+``` Java
+public class MyPersistenceUnit implements PersistenceUnitInfo {
+    @Override
+    public String getPersistenceUnitName() {
+        return null;
+    }
+
+    @Override
+    public String getPersistenceProviderClassName() {
+        return null;
+    }
+
+    @Override
+    public PersistenceUnitTransactionType getTransactionType() {
+        return null;
+    }
+
+    @Override
+    public DataSource getJtaDataSource() {
+        return null;
+    }
+
+    @Override
+    public DataSource getNonJtaDataSource() {
+        return null;
+    }
+
+    @Override
+    public List<String> getMappingFileNames() {
+        return null;
+    }
+
+    @Override
+    public List<URL> getJarFileUrls() {
+        return null;
+    }
+
+    @Override
+    public URL getPersistenceUnitRootUrl() {
+        return null;
+    }
+
+    @Override
+    public List<String> getManagedClassNames() {
+        return null;
+    }
+
+    @Override
+    public boolean excludeUnlistedClasses() {
+        return false;
+    }
+
+    @Override
+    public SharedCacheMode getSharedCacheMode() {
+        return null;
+    }
+
+    @Override
+    public ValidationMode getValidationMode() {
+        return null;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return null;
+    }
+
+    @Override
+    public String getPersistenceXMLSchemaVersion() {
+        return null;
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return null;
+    }
+
+    @Override
+    public void addTransformer(ClassTransformer classTransformer) {
+
+    }
+
+    @Override
+    public ClassLoader getNewTempClassLoader() {
+        return null;
+    }
+}
+```
+All the properties present in the XML file are provided by overriding the methods of the **PersistenceUnitInfo** interface.
+### Persistence Unit Name
+Every persistence unit must have a name, that's because there can be more than one persistence unit in a project but it is rare to have more than one.
+
+``` Java
+@Override
+public String getPersistenceUnitName() {
+    return "mypersistenceUnit";
+}
+```
+### Persistence Provider Class Name
+It is the JPA implementation provider that needs to be defined in the persistence unit. In my case it is Hibernate.
+
+``` Java
+@Override
+public String getPersistenceProviderClassName() {
+    return "org.hibernate.jpa.HibernatePersistenceProvider";
+}
+```
+### Transaction Type
+The persistence unit must also provide the transaction type it is going to use. Depending on the type of application transaction type is decided
+
+``` Java
+@Override
+public PersistenceUnitTransactionType getTransactionType() {
+    return PersistenceUnitTransactionType.RESOURCE_LOCAL;
+}
+```
+### DataSource
+For JPA to establish a connection to the database, it needs a data source object containing database credentials. In the XML file, we didn't need to define any data source, it automatically created one using some internal implementation. But in the Java class, it needs to be defined manually. The best way to create a data source is using a Hikari Data source object. 
+Add the Hikari dependency in the pom.xml file
+
+``` XML
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>5.0.1</version>
+</dependency>
+```
+Now create the Datasource object and return it 
+
+``` Java
+@Override
+public DataSource getJtaDataSource() {
+    HikariDataSource dataSource = new HikariDataSource();
+    dataSource.setJdbcUrl("database-utl");
+    dataSource.setUsername("username");
+    dataSource.setPassword("password");
+    return dataSource;
+}
+```
+### Managed Classes
+When using the XML file, the entities' objects were automatically registered and managed by the JPA. In the Java file, you need to define all the entity classes that need to be managed by the JPA.
+
+``` Java
+@Override
+public List<String> getManagedClassNames() {
+    return List.of("org.com.model.Student");
+}
+```
+It may or may not work even if you didn't define the entities in the file.
+These are the minimum required configuration you need to run the application with JPA.
+
+When using the XML file, **EntityManagerFactory** is created by passing the persistence unit name in the constructor.
+
+``` java
+EntityManagerFactory entityManagerFactory 
+            = Persistence.createEntityManagerFactory("myPersistenceUnit");
+```
+To create an **EntityManagerFactory** with the Java class implementation, we do this
+
+``` Java
+EntityManagerFactory entityManagerFactory =
+      new HibernatePersistenceProvider()
+        .createContainerEntityManagerFactory(new MyPersistenceUnit(), new HashMap());
+```
+The hashmap is used to pass properties, I have passed an empty hashmap here since we don't have any properties to pass.
+Using the entity manager factory, an entity manager can be created as it is done normally.
+
+Although the persistence unit class doesn't provide any performance benefits of kind over the use of persistence.xml file, the choice of which to use is purely based on one's personal preference. Maybe in your next project, if you don't want to deal with any XML files try creating your own persistence unit class.
