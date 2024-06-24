@@ -8,7 +8,7 @@ export default function Home() {
     <div>
       <div>
         <div className="text-4xl mb-5 font-semibold">
-          Hey, I&apos;m Mohammad Sohail Ali</div>
+          Hey, I&apos;m Sohail</div>
         <div className="flex sm:flex-row flex-col items-start gap-8 mt-9">
           <div className="flex flex-col items-center flex-[1]">
             <Image
